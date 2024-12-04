@@ -7,6 +7,7 @@ pub struct Lexer {
 pub enum Sym {
     Comment,
     Comma,
+    Colon,
     LBrace,
     RBrace,
 }
@@ -79,6 +80,7 @@ impl Lexer {
     fn consume_symbol(&mut self) -> Token {
         let s = match self.consume_char() {
             ',' => Sym::Comma,
+            ':' => Sym::Colon,
             _ => Sym::Comment,
         };
 
@@ -88,7 +90,11 @@ impl Lexer {
     fn consume_ident(&mut self) -> Token {
         let mut name = String::new();
 
-        while !self.is_eof() && (self.peek_char().is_alphanumeric() || self.peek_char() == '_') {
+        while !self.is_eof()
+            && (self.peek_char().is_alphanumeric()
+                || self.peek_char() == '.'
+                || self.peek_char() == '_')
+        {
             name.push(self.consume_char());
         }
 
@@ -111,6 +117,9 @@ mod tests {
     #[test]
     fn test_simple_tokenize() {
         let source = r#"
+            section .data
+
+            main:
             mov rax, 1
             mov bx, ax
         "#
@@ -118,10 +127,14 @@ mod tests {
         let mut lexer = Lexer::new(source);
         let tokens = lexer.tokenize();
 
-        assert_eq!(tokens.len(), 8);
+        assert_eq!(tokens.len(), 12);
         assert_eq!(
             tokens,
             vec![
+                Token::Ident("section".to_string()),
+                Token::Ident(".data".to_string()),
+                Token::Ident("main".to_string()),
+                Token::Symbol(Sym::Colon),
                 Token::Ident("mov".to_string()),
                 Token::Ident("rax".to_string()),
                 Token::Symbol(Sym::Comma),
