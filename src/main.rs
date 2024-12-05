@@ -1,19 +1,21 @@
+mod error;
 mod lexer;
 mod parser;
 
 use std::env;
 use std::fs;
 
+use error::Error;
 use lexer::Lexer;
 use parser::Parser;
 
-fn main() {
+fn main() -> Result<(), Error> {
     let mut tokens = Vec::new();
     let args = env::args().collect::<Vec<String>>();
 
     if args.len() < 3 {
         println!("usage: ./dasm filename.s <mode> (<mode>: --lex, --parse)");
-        return;
+        std::process::exit(1);
     }
 
     let filename = &args[1];
@@ -34,11 +36,13 @@ fn main() {
         }
         "--parse" => {
             let mut parser = Parser::new(tokens);
-            let insts = parser.parse();
+            let insts = parser.parse()?;
             for inst in insts {
                 println!("{:?}", inst);
             }
         }
         _ => {}
     }
+
+    Ok(())
 }

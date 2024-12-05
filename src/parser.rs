@@ -1,3 +1,4 @@
+use crate::error::Error;
 use crate::lexer::{Sym, Token};
 
 #[derive(Debug, PartialEq)]
@@ -10,6 +11,7 @@ pub enum Operand {
 pub enum Instr {
     Label(String),
     Mov(Operand, Operand),
+    Add(Operand, Operand),
     Ret,
     Nop,
 }
@@ -24,7 +26,7 @@ impl Parser {
         Self { index: 0, tokens }
     }
 
-    pub fn parse(&mut self) -> Vec<Instr> {
+    pub fn parse(&mut self) -> Result<Vec<Instr>, Error> {
         let mut instrs = vec![];
 
         while let Some(token) = self.next_token() {
@@ -41,33 +43,44 @@ impl Parser {
                 Token::Instruction(x) => match x.as_str() {
                     "ret" => instrs.push(Instr::Ret),
                     "mov" => {
-                        match self.next_token() {
-                            Some(Token::Register(r1)) => {
-                                if let Some(Token::Symbol(Sym::Comma)) = self.next_token() {
-                                    let op1 = Operand::Register(r1);
-                                    match self.next_token() {
-                                        Some(Token::Register(r2)) => {
-                                            let op2 = Operand::Register(r2);
-                                            instrs.push(Instr::Mov(op1, op2));
-                                        }
-                                        Some(Token::Int(x)) => {
-                                            let op2 = Operand::Integer(x);
-                                            instrs.push(Instr::Mov(op1, op2));
-                                        }
-                                        _ => {}
-                                    }
-                                }
-                            }
-                            _ => { /* can be mov to memory */ }
-                        }
+                        let (op1, op2) = self.parse_binary_op()?;
+                        instrs.push(Instr::Mov(op1, op2));
                     }
-                    _ => { /* invalid instruction */ }
+                    "add" => {
+                        let (op1, op2) = self.parse_binary_op()?;
+                        instrs.push(Instr::Add(op1, op2));
+                    }
+                    _ => return Err(Error(format!("invalid instruction {}", x))),
                 },
-                _ => { /* invalid token */ }
+                _ => return Err(Error(format!("invalid token {:?}", token))),
             }
         }
 
-        instrs
+        Ok(instrs)
+    }
+
+    fn parse_binary_op(&mut self) -> Result<(Operand, Operand), Error> {
+        match self.next_token() {
+            Some(Token::Register(r1)) => {
+                if let Some(Token::Symbol(Sym::Comma)) = self.next_token() {
+                    let op1 = Operand::Register(r1);
+                    match self.next_token() {
+                        Some(Token::Register(r2)) => {
+                            let op2 = Operand::Register(r2);
+                            return Ok((op1, op2));
+                        }
+                        Some(Token::Int(x)) => {
+                            let op2 = Operand::Integer(x);
+                            return Ok((op1, op2));
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Err(Error("failed to parse binary op".to_string()))
     }
 
     fn next_token(&mut self) -> Option<Token> {
@@ -82,10 +95,6 @@ impl Parser {
 
     fn is_eof(&self) -> bool {
         self.index >= self.tokens.len()
-    }
-
-    pub fn next_instr(&mut self) -> Instr {
-        Instr::Nop
     }
 }
 
@@ -109,7 +118,7 @@ mod tests {
         let tokens = lexer.tokenize();
 
         let mut parser = Parser::new(tokens);
-        let instrs = parser.parse();
+        let instrs = parser.parse().unwrap();
 
         assert_eq!(
             instrs,
