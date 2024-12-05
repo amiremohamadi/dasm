@@ -1,8 +1,15 @@
-use crate::lexer::{Lexer, Sym, Token};
+use crate::lexer::{Sym, Token};
+
+#[derive(Debug, PartialEq)]
+pub enum Operand {
+    Register(String),
+    Integer(i32),
+}
 
 #[derive(Debug, PartialEq)]
 pub enum Instr {
     Label(String),
+    Mov(Operand, Operand),
     Ret,
     Nop,
 }
@@ -33,9 +40,30 @@ impl Parser {
                 }
                 Token::Instruction(x) => match x.as_str() {
                     "ret" => instrs.push(Instr::Ret),
-                    _ => {}
+                    "mov" => {
+                        match self.next_token() {
+                            Some(Token::Register(r1)) => {
+                                if let Some(Token::Symbol(Sym::Comma)) = self.next_token() {
+                                    let op1 = Operand::Register(r1);
+                                    match self.next_token() {
+                                        Some(Token::Register(r2)) => {
+                                            let op2 = Operand::Register(r2);
+                                            instrs.push(Instr::Mov(op1, op2));
+                                        }
+                                        Some(Token::Int(x)) => {
+                                            let op2 = Operand::Integer(x);
+                                            instrs.push(Instr::Mov(op1, op2));
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                            _ => { /* can be mov to memory */ }
+                        }
+                    }
+                    _ => { /* invalid instruction */ }
                 },
-                _ => {}
+                _ => { /* invalid token */ }
             }
         }
 
@@ -64,6 +92,7 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lexer::Lexer;
 
     #[test]
     fn test_simple_parse() {
@@ -82,6 +111,17 @@ mod tests {
         let mut parser = Parser::new(tokens);
         let instrs = parser.parse();
 
-        assert_eq!(instrs, vec![Instr::Label("main".to_string()), Instr::Ret]);
+        assert_eq!(
+            instrs,
+            vec![
+                Instr::Label("main".to_string()),
+                Instr::Mov(Operand::Register("rax".to_string()), Operand::Integer(1),),
+                Instr::Mov(
+                    Operand::Register("bx".to_string()),
+                    Operand::Register("ax".to_string())
+                ),
+                Instr::Ret
+            ]
+        );
     }
 }
