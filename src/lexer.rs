@@ -3,7 +3,7 @@ pub struct Lexer {
     pub buf: Vec<char>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Sym {
     Comment,
     Comma,
@@ -11,11 +11,13 @@ pub enum Sym {
     LBrace,
     RBrace,
 }
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Token {
     Int(i32),
     Symbol(Sym),
     Ident(String),
+    Instruction(String),
+    Register(String),
     Dummy,
 }
 
@@ -46,7 +48,7 @@ impl Lexer {
 
         match self.peek_char() {
             x if x.is_digit(10) => Some(self.consume_number()),
-            x if is_ident(x) => Some(self.consume_ident()),
+            x if is_ident(x) => Some(parse_ident(self.consume_ident())),
             _ => Some(self.consume_symbol()),
         }
     }
@@ -110,6 +112,24 @@ fn is_ident(c: char) -> bool {
     c.is_alphabetic() || c == '.' || c == '_'
 }
 
+fn parse_ident(token: Token) -> Token {
+    match &token {
+        Token::Ident(name) => match name.as_str() {
+            "mov" => Token::Instruction(name.to_string()),
+            "add" => Token::Instruction(name.to_string()),
+            "ret" => Token::Instruction(name.to_string()),
+
+            "rax" => Token::Register(name.to_string()),
+            "rbx" => Token::Register(name.to_string()),
+            "ax" => Token::Register(name.to_string()),
+            "bx" => Token::Register(name.to_string()),
+
+            _ => token,
+        },
+        _ => token,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -135,14 +155,14 @@ mod tests {
                 Token::Ident(".data".to_string()),
                 Token::Ident("main".to_string()),
                 Token::Symbol(Sym::Colon),
-                Token::Ident("mov".to_string()),
-                Token::Ident("rax".to_string()),
+                Token::Instruction("mov".to_string()),
+                Token::Register("rax".to_string()),
                 Token::Symbol(Sym::Comma),
                 Token::Int(1),
-                Token::Ident("mov".to_string()),
-                Token::Ident("bx".to_string()),
+                Token::Instruction("mov".to_string()),
+                Token::Register("bx".to_string()),
                 Token::Symbol(Sym::Comma),
-                Token::Ident("ax".to_string())
+                Token::Register("ax".to_string())
             ]
         );
     }
