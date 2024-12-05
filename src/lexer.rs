@@ -33,7 +33,10 @@ impl Lexer {
         let mut tokens = vec![];
 
         while let Some(token) = self.next_token() {
-            tokens.push(token);
+            match token {
+                Token::Symbol(Sym::Comment) => { /* ignore comments */ }
+                _ => tokens.push(token),
+            }
         }
 
         tokens
@@ -83,6 +86,10 @@ impl Lexer {
         let s = match self.consume_char() {
             ',' => Sym::Comma,
             ':' => Sym::Colon,
+            ';' => {
+                while !self.is_eof() && self.consume_char() != '\n' {}
+                Sym::Comment
+            }
             _ => Sym::Comment,
         };
 
