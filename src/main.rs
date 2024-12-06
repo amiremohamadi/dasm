@@ -11,7 +11,11 @@ use lexer::Lexer;
 use parser::Parser;
 
 fn main() -> Result<(), Error> {
-    elf::generate_elf64();
+    let mut elf64 = elf::Elf::new();
+    elf64.generate();
+    println!("{:?}", elf64.to_bytes());
+
+    // elf::generate_elf64();
 
     let mut tokens = Vec::new();
     let args = env::args().collect::<Vec<String>>();
