@@ -124,6 +124,7 @@ fn parse_ident(token: Token) -> Token {
         Token::Ident(name) => match name.as_str() {
             "mov" => Token::Instruction(name.to_string()),
             "add" => Token::Instruction(name.to_string()),
+            "jmp" => Token::Instruction(name.to_string()),
             "ret" => Token::Instruction(name.to_string()),
 
             "rax" => Token::Register(name.to_string()),

@@ -1,3 +1,4 @@
+mod elf;
 mod error;
 mod lexer;
 mod parser;
@@ -10,6 +11,8 @@ use lexer::Lexer;
 use parser::Parser;
 
 fn main() -> Result<(), Error> {
+    elf::generate_elf64();
+
     let mut tokens = Vec::new();
     let args = env::args().collect::<Vec<String>>();
 

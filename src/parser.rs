@@ -4,6 +4,7 @@ use crate::lexer::{Sym, Token};
 #[derive(Debug, PartialEq)]
 pub enum Operand {
     Register(String),
+    Label(String),
     Integer(i32),
 }
 
@@ -12,6 +13,7 @@ pub enum Instr {
     Label(String),
     Mov(Operand, Operand),
     Add(Operand, Operand),
+    Jmp(Operand),
     Ret,
     Nop,
 }
@@ -42,6 +44,10 @@ impl Parser {
                 }
                 Token::Instruction(x) => match x.as_str() {
                     "ret" => instrs.push(Instr::Ret),
+                    "jmp" => {
+                        let op = self.parse_unary_op()?;
+                        instrs.push(Instr::Jmp(op));
+                    }
                     "mov" => {
                         let (op1, op2) = self.parse_binary_op()?;
                         instrs.push(Instr::Mov(op1, op2));
@@ -57,6 +63,15 @@ impl Parser {
         }
 
         Ok(instrs)
+    }
+
+    fn parse_unary_op(&mut self) -> Result<Operand, Error> {
+        match self.next_token() {
+            Some(Token::Register(r)) => Ok(Operand::Register(r)),
+            Some(Token::Int(x)) => Ok(Operand::Integer(x)),
+            Some(Token::Ident(x)) => Ok(Operand::Label(x)),
+            _ => Err(Error("failed to parse unary op".to_string())),
+        }
     }
 
     fn parse_binary_op(&mut self) -> Result<(Operand, Operand), Error> {
