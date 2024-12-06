@@ -126,9 +126,11 @@ fn parse_ident(token: Token) -> Token {
             "add" => Token::Instruction(name.to_string()),
             "jmp" => Token::Instruction(name.to_string()),
             "ret" => Token::Instruction(name.to_string()),
+            "syscall" => Token::Instruction(name.to_string()),
 
             "rax" => Token::Register(name.to_string()),
             "rbx" => Token::Register(name.to_string()),
+            "rdi" => Token::Register(name.to_string()),
             "ax" => Token::Register(name.to_string()),
             "bx" => Token::Register(name.to_string()),
 

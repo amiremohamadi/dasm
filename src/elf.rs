@@ -125,7 +125,7 @@ pub struct Elf {
 }
 
 impl Elf {
-    pub fn new() -> Self {
+    pub fn new(program: Vec<u8>) -> Self {
         let mut null_section = create_null_section();
         let mut text_section = create_text_section();
         let mut shstrtab_section = create_strtab_section();
@@ -139,7 +139,7 @@ impl Elf {
         symtab_section.header.name = strtab.append(".symtab".to_string()) as _;
         strtab_section.header.name = strtab.append(".strtab".to_string()) as _;
 
-        text_section.data = vec![];
+        text_section.data = program;
         shstrtab_section.data = strtab.buf;
 
         // TODO(Amir): for now, we're gonna add .text and _start
@@ -276,64 +276,3 @@ fn create_symtable_section() -> Section {
         data: Vec::new(),
     }
 }
-
-// pub fn generate_elf64() {
-//     let mut buf = Vec::<u8>::new();
-
-//     let header = create_elf64_header();
-//     buf.extend_from_slice(&header.to_bytes());
-
-//     let null_section_header = create_null_section();
-//     buf.extend_from_slice(&null_section_header.to_bytes());
-
-//     let data = b"\0.text\0.shstrtab\0.symtab\0.strtab\0";
-
-//     let mut text_section_header = create_text_section();
-//     text_section_header.offset =
-//         size_of::<Header>() as u64 + (size_of::<SectionHeader>() as u64 * 5) + data.len() as u64;
-//     text_section_header.size = 5;
-//     buf.extend_from_slice(&text_section_header.to_bytes());
-
-//     let mut shstrtab_section_header = create_strtab_section();
-//     shstrtab_section_header.offset =
-//         size_of::<Header>() as u64 + (size_of::<SectionHeader>() as u64 * 5);
-//     shstrtab_section_header.size = data.len() as _;
-//     buf.extend_from_slice(&shstrtab_section_header.to_bytes());
-
-//     let mut symtab_section_header = create_symtable_section();
-//     symtab_section_header.info = 1;
-//     symtab_section_header.link = 4;
-//     symtab_section_header.entry_size = 24;
-//     symtab_section_header.size = 48;
-//     symtab_section_header.offset = size_of::<Header>() as u64
-//         + (size_of::<SectionHeader>() as u64 * 5)
-//         + data.len() as u64
-//         + b"\xb8\x09\x00\x00\x00".len() as u64;
-//     buf.extend_from_slice(&symtab_section_header.to_bytes());
-
-//     let mut strstab_section_header = create_strtab_section();
-//     strstab_section_header.name = 25;
-//     strstab_section_header.offset = size_of::<Header>() as u64
-//         + (size_of::<SectionHeader>() as u64 * 5)
-//         + data.len() as u64
-//         + b"\xb8\x09\x00\x00\x00".len() as u64
-//         + 48;
-//     strstab_section_header.size = b".text\0_start\0".len() as _;
-//     buf.extend_from_slice(&strstab_section_header.to_bytes());
-
-//     buf.extend_from_slice(data);
-//     buf.extend_from_slice(b"\xb8\x09\x00\x00\x00");
-
-//     buf.extend_from_slice(&[
-//         00, 00, 00, 00, 3, 00, 0x1, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00,
-//         00,
-//     ]);
-//     buf.extend_from_slice(&[
-//         06, 00, 00, 00, 0x10, 00, 0x1, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00,
-//         00, 00,
-//     ]);
-
-//     buf.extend_from_slice(b".text\0_start\0");
-
-//     println!("{:?}", buf);
-// }

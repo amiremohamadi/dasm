@@ -14,8 +14,36 @@ pub enum Instr {
     Mov(Operand, Operand),
     Add(Operand, Operand),
     Jmp(Operand),
+    Syscall,
     Ret,
     Nop,
+}
+
+impl Instr {
+    pub fn encode(&self) -> Vec<u8> {
+        match self {
+            Self::Mov(Operand::Register(r), Operand::Integer(x)) => {
+                let opcode = 0xb8
+                    + match r.as_str() {
+                        "rcx" => 1,
+                        "rdx" => 2,
+                        "rbx" => 3,
+                        "rsp" => 4,
+                        "rbp" => 5,
+                        "rsi" => 6,
+                        "rdi" => 7,
+                        _ => 0,
+                    };
+                let mut code = vec![opcode];
+                code.extend_from_slice(&x.to_le_bytes());
+                code
+            }
+            Self::Syscall => {
+                vec![0x0f, 0x05]
+            }
+            _ => vec![],
+        }
+    }
 }
 
 pub struct Parser {
@@ -44,6 +72,7 @@ impl Parser {
                 }
                 Token::Instruction(x) => match x.as_str() {
                     "ret" => instrs.push(Instr::Ret),
+                    "syscall" => instrs.push(Instr::Syscall),
                     "jmp" => {
                         let op = self.parse_unary_op()?;
                         instrs.push(Instr::Jmp(op));
