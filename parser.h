@@ -21,6 +21,8 @@ typedef enum {
     INSTR_MOV,
     INSTR_RET,
     INSTR_SYSCALL,
+    INSTR_JMP,
+    INSTR_LABEL,
     PARSER_EOF,
 } instrtype_t;
 
@@ -46,7 +48,19 @@ typedef struct {
     op_t *op2;
 } binary_op_t;
 
+typedef struct _symentry {
+    char *name;
+    size_t offset;
+    struct _symentry *next;
+} symentry_t;
+
+typedef struct {
+    symentry_t *syms;
+    size_t offset;
+} asm_t;
+
 instr_t next_instr(lexer_t *lex);
-size_t encode(instr_t *ins, unsigned char *buf);
+void encode(asm_t *asmblr, instr_t *ins, unsigned char *buf);
+int instr_off(instr_t *ins);
 
 #endif // PARSER_H

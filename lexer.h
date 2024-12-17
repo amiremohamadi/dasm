@@ -24,6 +24,8 @@ typedef enum {
     SYM_COMMA,
     SYM_COMMENT,
     SYM_UNKNOWN,
+    SYM_LBRACE,
+    SYM_RBRACE,
 } symtype_t;
 
 typedef struct {

@@ -60,6 +60,12 @@ token_t consume_sym(lexer_t *lex) {
         case ':':
             st = SYM_COLON;
             break;
+        case '[':
+            st = SYM_LBRACE;
+            break;
+        case ']':
+            st = SYM_RBRACE;
+            break;
         case ';':
             while (lex->buf[lex->i] != '\0' && lex->buf[lex->i] != '\n') {
                 lex->i++;
@@ -158,6 +164,12 @@ void debug(token_t tkn) {
                     break;
                 case SYM_COMMENT:
                     printf("TOKEN_SYM(COMMENT)\n");
+                    break;
+                case SYM_LBRACE:
+                    printf("TOKEN_SYM(LBRACE)\n");
+                    break;
+                case SYM_RBRACE:
+                    printf("TOKEN_SYM(RBRACE)\n");
                     break;
                 default:
                     printf("TOKEN_SYM(UNKNOWN)\n");
