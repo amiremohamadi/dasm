@@ -67,14 +67,43 @@ int output(lexer_t *lex, const char *name) {
     instr_t ins;
     elf64_t elf = gen_elf64();
 
-    // program
     size_t offset = 0;
+    symentry_t *sym = NULL;
+    asm_t asmblr = { .syms = NULL, .offset = 0 };
+
+    // collect symbols
+    do {
+        ins = next_instr(lex);
+        offset += instr_off(&ins);
+        if (ins.type == INSTR_LABEL) {
+            symentry_t *tmp = NULL;
+
+            tmp = malloc(sizeof(symentry_t));
+            tmp->offset = offset;
+            tmp->name = ins.data;
+            tmp->next = NULL;
+
+            if (sym == NULL) {
+                sym = tmp;
+            } else {
+                sym->next = tmp;
+                sym = sym->next;
+            }
+
+            if (asmblr.syms == NULL) {
+                asmblr.syms = sym;
+            }
+        }
+    } while (ins.type != PARSER_EOF);
+    lex->i = 0;
+
+    // program
     elf.sec[1].data = malloc(1024);
     do {
         ins = next_instr(lex);
-        offset += encode(&ins, elf.sec[1].data + offset);
+        encode(&asmblr, &ins, elf.sec[1].data);
     } while(ins.type != PARSER_EOF);
-    elf.sec[1].len = offset;
+    elf.sec[1].len = asmblr.offset;
 
     // update offsets
     offset = sizeof(elfhdr_t) + (sizeof(shdr_t) * 5);

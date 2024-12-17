@@ -55,7 +55,7 @@ instr_t next_instr(lexer_t *lex) {
             instr.type = PARSER_EOF;
             break;
 
-        case TKN_INSTR:
+        case TKN_INSTR: {
             if (strcmp(tkn.data, "ret") == 0) {
                 instr.type = INSTR_RET;
             }
@@ -65,7 +65,24 @@ instr_t next_instr(lexer_t *lex) {
             if (strcmp(tkn.data, "mov") == 0) {
                 instr.type = INSTR_MOV;
             }
+            if (strcmp(tkn.data, "ret") == 0) {
+                instr.type = INSTR_RET;
+            }
+            if (strcmp(tkn.data, "jmp") == 0) {
+                instr.type = INSTR_JMP;
+            }
             break;
+        }
+
+        case TKN_IDENT: {
+            char *value = (char *)tkn.data;
+            tkn = next_token(lex);
+            if (tkn.type == TKN_SYM && *((symtype_t *)tkn.data) == SYM_COLON) {
+                instr.type = INSTR_LABEL;
+                instr.data = value;
+            }
+            break;
+        }
 
         /* default: */
     }
@@ -73,13 +90,17 @@ instr_t next_instr(lexer_t *lex) {
     if (IS_BINOP(instr.type)) {
         instr.data = parse_bin_op(lex);
     }
+    if (instr.type == INSTR_JMP) {
+        instr.data = parse_op(lex);
+    }
 
     /* FREE_TKN(tkn); */
     return instr;
 }
 
-size_t encode(instr_t *ins, unsigned char *buf) {
-    size_t offset = 0;
+void encode(asm_t *asmblr, instr_t *ins, unsigned char *buf) {
+    buf += asmblr->offset;
+    asmblr->offset += instr_off(ins);
 
     switch (ins->type) {
         case INSTR_MOV: {
@@ -87,19 +108,54 @@ size_t encode(instr_t *ins, unsigned char *buf) {
             if (op->op1->type == OP_REG && op->op2->type == OP_INT) {
                 buf[0] = 0xb8 + regord((char *)op->op1->data);
                 memcpy(buf + 1, (int *)op->op2->data, sizeof(int));
-                offset = sizeof(int) + 1;
+            }
+            break;
+        }
+        case INSTR_JMP: {
+            op_t *op = (op_t *)ins->data;
+            if (op->type == OP_LABEL) {
+                size_t offset = 0;
+                buf[0] = 0xeb;
+
+                symentry_t *s = asmblr->syms;
+                while (s != NULL) {
+                    if (strcmp(s->name, op->data) == 0) {
+                        offset = s->offset - asmblr->offset;
+                        break;
+                    }
+
+                    s = s->next;
+                }
+
+                memcpy(buf + 1, &offset, sizeof(int));
             }
             break;
         }
         case INSTR_SYSCALL: {
             buf[0] = 0x0f;
             buf[1] = 0x05;
-            offset = 2;
+            break;
+        }
+        case INSTR_RET: {
+            buf[0] = 0xc3;
             break;
         }
     }
+}
 
-    return offset;
+int instr_off(instr_t *ins) {
+    switch (ins->type) {
+        case INSTR_RET:
+        case INSTR_NOP:
+            return 1;
+        case INSTR_SYSCALL:
+        case INSTR_JMP:
+            return 2;
+        case INSTR_MOV:
+            return 1 + sizeof(int);
+        default:
+            return 0;
+    }
 }
 
 int regord(const char *reg) {
@@ -142,4 +198,3 @@ int regord(const char *reg) {
 
     return 0;
 }
-
