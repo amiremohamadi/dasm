@@ -23,6 +23,7 @@ typedef enum {
     INSTR_SYSCALL,
     INSTR_JMP,
     INSTR_LABEL,
+    INSTR_GLOBAL_LABEL,
     PARSER_EOF,
 } instrtype_t;
 

@@ -71,6 +71,9 @@ instr_t next_instr(lexer_t *lex) {
             if (strcmp(tkn.data, "jmp") == 0) {
                 instr.type = INSTR_JMP;
             }
+            if (strcmp(tkn.data, "global") == 0) {
+                instr.type = INSTR_GLOBAL_LABEL;
+            }
             break;
         }
 
@@ -90,7 +93,8 @@ instr_t next_instr(lexer_t *lex) {
     if (IS_BINOP(instr.type)) {
         instr.data = parse_bin_op(lex);
     }
-    if (instr.type == INSTR_JMP) {
+    if (instr.type == INSTR_JMP ||
+            instr.type == INSTR_GLOBAL_LABEL) {
         instr.data = parse_op(lex);
     }
 

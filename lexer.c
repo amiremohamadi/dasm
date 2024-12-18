@@ -8,6 +8,7 @@
     strcmp((arg), "mov") == 0     || \
     strcmp((arg), "add") == 0     || \
     strcmp((arg), "jmp") == 0     || \
+    strcmp((arg), "global") == 0  || \
     strcmp((arg), "syscall") == 0 || \
     strcmp((arg), "ret") == 0        \
 )

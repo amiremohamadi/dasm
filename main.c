@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "elf.h"
+#include "asm.h"
 
 int read_file(const char *name, char **buf);
 int output(lexer_t *lex, const char *name);
@@ -54,9 +55,9 @@ int read_file(const char *name, char **buf) {
     len = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    *buf = (char *)malloc(len);
+    *buf = (char *)malloc(len + 1);
     fread(*buf, sizeof(char), len, f);
-    *buf[len] = '\0';
+    (*buf)[len] = '\0';
 
     fclose(f);
     return 0;
@@ -64,54 +65,9 @@ int read_file(const char *name, char **buf) {
 
 int output(lexer_t *lex, const char *name) {
     FILE *f;
-    instr_t ins;
+
     elf64_t elf = gen_elf64();
-
-    size_t offset = 0;
-    symentry_t *sym = NULL;
-    asm_t asmblr = { .syms = NULL, .offset = 0 };
-
-    // collect symbols
-    do {
-        ins = next_instr(lex);
-        offset += instr_off(&ins);
-        if (ins.type == INSTR_LABEL) {
-            symentry_t *tmp = NULL;
-
-            tmp = malloc(sizeof(symentry_t));
-            tmp->offset = offset;
-            tmp->name = ins.data;
-            tmp->next = NULL;
-
-            if (sym == NULL) {
-                sym = tmp;
-            } else {
-                sym->next = tmp;
-                sym = sym->next;
-            }
-
-            if (asmblr.syms == NULL) {
-                asmblr.syms = sym;
-            }
-        }
-    } while (ins.type != PARSER_EOF);
-    lex->i = 0;
-
-    // program
-    elf.sec[1].data = malloc(1024);
-    do {
-        ins = next_instr(lex);
-        encode(&asmblr, &ins, elf.sec[1].data);
-    } while(ins.type != PARSER_EOF);
-    elf.sec[1].len = asmblr.offset;
-
-    // update offsets
-    offset = sizeof(elfhdr_t) + (sizeof(shdr_t) * 5);
-    for (int i = 1; i < 5; i++) {
-        elf.sec[i].hdr.size = elf.sec[i].len;
-        elf.sec[i].hdr.offset = offset;
-        offset += elf.sec[i].len;
-    }
+    assemble(&elf, lex);
 
     if ((f = fopen(name, "wb")) == 0) {
         return 1;

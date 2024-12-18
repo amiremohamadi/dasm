@@ -92,10 +92,6 @@ shdr_t gen_symtab_shdr() {
 size_t append_strtab(strtab_t *stab, const char *data) {
     size_t idx = stab->len;
 
-    /* while (*data != '\0') { */
-    /*     stab->buf[stab->len++] = *(data++); */
-    /*     printf("DATA %d\n", stab->buf[stab->len-1]); */
-    /* } */
     strcpy(stab->buf + stab->len, data);
     stab->len += strlen(data);
     stab->buf[stab->len++] = '\0';
@@ -110,53 +106,23 @@ elf64_t gen_elf64() {
     elf.hdr.shnum = 0x05;
     elf.hdr.strndx = 0x02;
 
-    elf.sec[0] = (section_t) { .hdr = gen_null_shdr(), .data = 0, .len = 0};
-    elf.sec[1] = (section_t) {.hdr = gen_text_shdr(), .data = 0, .len = 0 };
-    elf.sec[2] = (section_t) {.hdr = gen_strtab_shdr(), .data = 0, .len = 0 };
-    elf.sec[3] = (section_t) {.hdr = gen_symtab_shdr(), .data = 0, .len = 0 };
-    elf.sec[4] = (section_t) {.hdr = gen_strtab_shdr(), .data = 0, .len = 0 };
+    elf.sec[NULL_SECTION] = (section_t) { .hdr = gen_null_shdr(), .data = 0, .len = 0};
+    elf.sec[TEXT_SECTION] = (section_t) {.hdr = gen_text_shdr(), .data = 0, .len = 0 };
+    elf.sec[SHSTRTAB_SECTION] = (section_t) {.hdr = gen_strtab_shdr(), .data = 0, .len = 0 };
+    elf.sec[SYMTAB_SECTION] = (section_t) {.hdr = gen_symtab_shdr(), .data = 0, .len = 0 };
+    elf.sec[STRTAB_SECTION] = (section_t) {.hdr = gen_strtab_shdr(), .data = 0, .len = 0 };
 
     strtab_t stab = { .len = 0, .buf = malloc(MAX_BUF_SIZE) };
-    elf.sec[0].hdr.name = append_strtab(&stab, ""); // null section
-    elf.sec[1].hdr.name = append_strtab(&stab, ".text");
-    elf.sec[2].hdr.name = append_strtab(&stab, ".shstrtab");
-    elf.sec[3].hdr.name = append_strtab(&stab, ".symtab");
-    elf.sec[4].hdr.name = append_strtab(&stab, ".strtab");
+    elf.sec[NULL_SECTION].hdr.name = append_strtab(&stab, ""); // null section
+    elf.sec[TEXT_SECTION].hdr.name = append_strtab(&stab, ".text");
+    elf.sec[SHSTRTAB_SECTION].hdr.name = append_strtab(&stab, ".shstrtab");
+    elf.sec[SYMTAB_SECTION].hdr.name = append_strtab(&stab, ".symtab");
+    elf.sec[STRTAB_SECTION].hdr.name = append_strtab(&stab, ".strtab");
 
-    elf.sec[2].data = stab.buf;
-    elf.sec[2].len = stab.len;
+    elf.sec[SHSTRTAB_SECTION].data = stab.buf;
+    elf.sec[SHSTRTAB_SECTION].len = stab.len;
 
-    // TODO: avoid hardcoded symbols
-    strtab_t symstab = { .len = 0, .buf = malloc(MAX_BUF_SIZE) };
-
-    sym_t symtext = {
-        .name = append_strtab(&symstab, ".text"),
-        .info = 0x03, // SECTION
-        .index = 0x01,
-        .other = 0,
-        .value = 0,
-        .size = 0,
-    };
-    sym_t symstart = {
-        .name = append_strtab(&symstab, "_start"),
-        .info = 0x10, // GLOBAL
-        .index = 0x01,
-        .other = 0,
-        .value = 0,
-        .size = 0,
-    };
-
-    elf.sec[3].hdr.info = 0x01; // one symbol
-    elf.sec[3].hdr.link = 0x04; // linked to strtab section
-
-    elf.sec[3].len = sizeof(symstart) + sizeof(symtext);
-    elf.sec[3].data = malloc(elf.sec[3].len);
-    memcpy(elf.sec[3].data, &symtext, sizeof(symtext));
-    memcpy(elf.sec[3].data + sizeof(symtext), &symstart, sizeof(symstart));
-
-    elf.sec[4].data = symstab.buf;
-    elf.sec[4].len = symstab.len;
+    elf.sec[SYMTAB_SECTION].hdr.link = STRTAB_SECTION;
 
     return elf;
 }
-

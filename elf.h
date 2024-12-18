@@ -6,6 +6,11 @@
 #include <string.h>
 
 #define MAX_BUF_SIZE 1024
+#define NULL_SECTION 0
+#define TEXT_SECTION 1
+#define SHSTRTAB_SECTION 2
+#define SYMTAB_SECTION 3
+#define STRTAB_SECTION 4
 
 typedef struct {
     unsigned char ident[16];
