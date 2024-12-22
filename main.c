@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
     lexer_t lex = { .buf = 0, .i = 0 };
 
     if (argc < 3) {
-        printf("usage: ./dasm <filename> <flag> [output] (flag: --lex, --parse, --out)\n");
+        printf("usage: ./dasm <filename> <flag> [output] (flag: --lex, --parse, --elf)\n");
         return 1;
     }
 

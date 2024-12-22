@@ -1,10 +1,10 @@
 #!/bin/bash
 
-for test in $(ls *.s); do
-    name="${test%.s}"
-    ./dasm $test --lex > ./tests/$name.lex;
-    ./dasm $test --elf > ./tests/$name.o;
-
-    git --no-pager diff ./tests/$name.lex;
-    git --no-pager diff ./tests/$name.o;
+for test in $(ls ./tests/*.s); do
+    name=$(basename "$test")
+    name="${name%.s}"
+    ./dasm $test --lex > ./tests/$name.lex
+    ./dasm $test --elf ./tests/$name.o
 done
+
+git --no-pager diff ./tests/
