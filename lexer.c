@@ -113,6 +113,7 @@ token_t consume_ident(lexer_t *lex) {
 }
 
 token_t consume_num(lexer_t *lex) {
+    token_t tkn;
     int num = 0;
 
     while (lex->buf[lex->i] != '\0' && is_digit(lex->buf[lex->i])) {
@@ -120,10 +121,11 @@ token_t consume_num(lexer_t *lex) {
         lex->i++;
     }
 
-    return (token_t){
-        .data = &num,
-        .type = TKN_NUM,
-    };
+    tkn.type = TKN_NUM;
+    tkn.data = malloc(sizeof(int));
+    *((int *)tkn.data) = num;
+    
+    return tkn;
 }
 
 token_t next_token(lexer_t *lex) {
