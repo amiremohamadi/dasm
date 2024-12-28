@@ -21,6 +21,7 @@ typedef enum {
     INSTR_MOV,
     INSTR_RET,
     INSTR_SYSCALL,
+    INSTR_CALL,
     INSTR_JMP,
     INSTR_LABEL,
     INSTR_GLOBAL_LABEL,

@@ -10,6 +10,7 @@
     strcmp((arg), "jmp") == 0     || \
     strcmp((arg), "global") == 0  || \
     strcmp((arg), "syscall") == 0 || \
+    strcmp((arg), "call") == 0    || \
     strcmp((arg), "ret") == 0        \
 )
 

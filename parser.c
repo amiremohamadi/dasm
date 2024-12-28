@@ -4,6 +4,7 @@
 #include "parser.h"
 
 int regord(const char *reg);
+size_t _offset(asm_t *asmblr, const char *label);
 
 op_t *parse_op(lexer_t *lex) {
     token_t tkn = next_token(lex);
@@ -62,6 +63,9 @@ instr_t next_instr(lexer_t *lex) {
             if (strcmp(tkn.data, "syscall") == 0) {
                 instr.type = INSTR_SYSCALL;
             }
+            if (strcmp(tkn.data, "call") == 0) {
+                instr.type = INSTR_CALL;
+            }
             if (strcmp(tkn.data, "mov") == 0) {
                 instr.type = INSTR_MOV;
             }
@@ -94,7 +98,8 @@ instr_t next_instr(lexer_t *lex) {
         instr.data = parse_bin_op(lex);
     }
     if (instr.type == INSTR_JMP ||
-            instr.type == INSTR_GLOBAL_LABEL) {
+            instr.type == INSTR_GLOBAL_LABEL ||
+            instr.type == INSTR_CALL) {
         instr.data = parse_op(lex);
     }
 
@@ -118,19 +123,8 @@ void encode(asm_t *asmblr, instr_t *ins, unsigned char *buf) {
         case INSTR_JMP: {
             op_t *op = (op_t *)ins->data;
             if (op->type == OP_LABEL) {
-                size_t offset = 0;
                 buf[0] = 0xeb;
-
-                symentry_t *s = asmblr->syms;
-                while (s != NULL) {
-                    if (strcmp(s->name, op->data) == 0) {
-                        offset = s->offset - asmblr->offset;
-                        break;
-                    }
-
-                    s = s->next;
-                }
-
+                size_t offset = _offset(asmblr, op->data);
                 memcpy(buf + 1, &offset, sizeof(int));
             }
             break;
@@ -138,6 +132,15 @@ void encode(asm_t *asmblr, instr_t *ins, unsigned char *buf) {
         case INSTR_SYSCALL: {
             buf[0] = 0x0f;
             buf[1] = 0x05;
+            break;
+        }
+        case INSTR_CALL: {
+            op_t *op = (op_t *)ins->data;
+            if (op->type == OP_LABEL) {
+                buf[0] = 0xe8;
+                size_t offset = _offset(asmblr, op->data);
+                memcpy(buf + 1, &offset, sizeof(int));
+            }
             break;
         }
         case INSTR_RET: {
@@ -155,6 +158,7 @@ int instr_off(instr_t *ins) {
         case INSTR_SYSCALL:
         case INSTR_JMP:
             return 2;
+        case INSTR_CALL:
         case INSTR_MOV:
             return 1 + sizeof(int);
         default:
@@ -201,4 +205,19 @@ int regord(const char *reg) {
     }
 
     return 0;
+}
+
+size_t _offset(asm_t *asmblr, const char *label) {
+    size_t offset = 0;
+    symentry_t *s = asmblr->syms;
+
+    while (s != NULL) {
+        if (strcmp(s->name, label) == 0) {
+            offset = s->offset - asmblr->offset;
+            break;
+        }
+        s = s->next;
+    }
+
+    return offset;
 }
